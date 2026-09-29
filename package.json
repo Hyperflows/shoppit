@@ -1,0 +1,25 @@
+{
+  "name": "shoppit",
+  "private": true,
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev:mobile": "pnpm --filter @shoppit/mobile start",
+    "dev:dashboard": "pnpm --filter @shoppit/dashboard dev",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit && pnpm -r typecheck",
+    "test": "tsx --test packages/foundation/test/*.test.ts",
+    "build": "pnpm -r build",
+    "check:supabase": "tsx scripts/check-supabase.ts"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "eslint": "^10.0.0",
+    "typescript-eslint": "^8.57.0",
+    "tsx": "^4.21.0",
+    "@types/node": "^22.0.0"
+  },
+  "type": "module"
+}
