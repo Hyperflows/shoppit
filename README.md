@@ -22,7 +22,7 @@ Choose one backend:
 1. Local: install Docker and the Supabase CLI, then run `supabase start` from this repository. Use the URL and anon/publishable key from `supabase status`. On an Android emulator use `http://10.0.2.2:54321`; on a physical device use your computer's LAN address with Docker ports reachable. An iOS simulator can use `http://127.0.0.1:54321`.
 2. Remote: create your own Supabase project and copy its project URL and publishable key. No project IDs or credentials are committed. To manage remote migrations later, use `supabase login` and `supabase link --project-ref YOUR_PROJECT_REF` locally.
 
-Verify a real connection with `SUPABASE_URL=... SUPABASE_PUBLISHABLE_KEY=... pnpm check:supabase`. Alternatively copy root `.env.example` to `.env`, fill it in, and run `node --env-file=.env --import tsx scripts/check-supabase.ts`. The check calls the REST API without writing data. Do not paste secrets into logs or version control.
+Verify a real connection with `SUPABASE_URL=... SUPABASE_PUBLISHABLE_KEY=... pnpm check:supabase`. Alternatively copy root `.env.example` to `.env`, fill it in, and run `node --env-file=.env --import tsx scripts/check-supabase.ts`. The check requests `/auth/v1/settings` using the public key only in the `apikey` header, without a bearer token or database writes. This verifies public client connectivity and key acceptance, without requiring a user session or database schema. The REST API metadata root (`/rest/v1/`) may require a secret key and is not used for this check. Do not paste secrets into logs or version control.
 
 No database schema is needed for Phase 0, so no migration or seed is added. Future database changes must be committed under `supabase/migrations/`. Client configuration alone provides no authorization; later phases must enforce permissions through Postgres RLS and server-side checks before exposing data. Session persistence is disabled until Phase 1 defines auth behavior.
 
@@ -41,8 +41,14 @@ CI checks compilation and native JavaScript exports. Before calling all Phase 0 
 - Passed: frozen-lockfile installation, `pnpm peers check`, `pnpm lint`, `pnpm typecheck`, `pnpm test` (5 tests), `pnpm build`, and `pnpm --filter @shoppit/mobile exec expo install --check`.
 - Next.js production server started and rendered the dashboard. Browser checks at 390×844 and 412×915 confirmed readable content and no horizontal overflow.
 - Expo offline development server started on port 8081; iOS and Android Hermes bundles exported successfully.
-- `pnpm check:supabase` correctly failed with the missing environment configuration message. A live backend connection has not been verified.
-- Native iOS/Android execution and native layouts remain unverified: Xcode/simulator, Android SDK/emulator, Docker and Supabase CLI were unavailable. No remote project configuration was supplied.
+- The public client connection check was updated to support publishable API keys using `/auth/v1/settings`; see the follow-up verification below.
+- Native iOS/Android execution and native layouts remain unverified: Xcode/simulator, Android SDK/emulator, Docker and Supabase CLI were unavailable. Remote project configuration is held only in ignored local environment files.
 - GitHub Actions is configured but has not run on GitHub yet. Four transitive dependency deprecation warnings remain in the framework dependency tree; direct peer checks pass.
 
 Reference documentation: [Expo monorepos](https://docs.expo.dev/guides/monorepos/), [Next.js installation](https://nextjs.org/docs/app/getting-started/installation), and [Supabase with Expo](https://supabase.com/docs/guides/getting-started/quickstarts/expo-react-native).
+
+## Public connection check follow-up (2026-09-30)
+
+The live check passes with the configured publishable key supplied only through `apikey`. No Authorization bearer token or privileged key is used. Lint, root/shared/mobile/dashboard typechecks, and all 8 tests pass, including public-key header regression coverage, HTTP rejection, and network failure handling. Only `.env.example` templates are tracked; root `.env` and both app `.env.local` files remain ignored and untracked.
+
+Phase 0 is accepted within the agreed scope excluding native simulator/device execution and hosted CI verification. Those two checks remain external/manual acceptance items. Phase 1 has not been implemented and still requires explicit approval.
